@@ -11,3 +11,10 @@ webdriver-manager==4.0.2
 selenium==4.26.1
 urllib3==2.2.1
 werkzeug==3.0.1
+beautifulsoup4
+flask
+google-generativeai
+requests
+selenium
+webdriver-manager
+youtube-transcript-api
