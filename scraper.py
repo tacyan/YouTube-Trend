@@ -13,6 +13,9 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 import time
+import json
+import re
+from concurrent.futures import ThreadPoolExecutor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -173,92 +176,79 @@ def get_trending_videos(keyword, upload_date='any', video_duration='any', sort_b
             driver.quit()
 
 def get_video_transcript(video_id):
-    """Get transcript for a video with improved error handling and UI interaction"""
+    """Get transcript for a video using optimized method"""
     logger.info(f"Fetching transcript for video: {video_id}")
     
-    max_retries = 3
-    retry_count = 0
-    
-    while retry_count < max_retries:
+    try:
+        # まずYouTube Transcript APIで試行（最速）
         try:
-            driver = setup_driver()
-            url = f"https://www.youtube.com/watch?v={video_id}"
-            driver.get(url)
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['ja', 'en'])
+            return ' '.join(t['text'] for t in transcript_list)
+        except:
+            pass
+        
+        # APIが失敗した場合はHTML解析を試行
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        response = requests.get(url, timeout=5)  # タイムアウトを設定
+        html = response.text
+        
+        match = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});', html)
+        if not match:
+            return None
             
-            wait = WebDriverWait(driver, 10)
+        player_response = json.loads(match.group(1))
+        captions = player_response.get('captions', {})
+        if not captions:
+            return None
             
-            # Try UI method first
-            try:
-                # Wait for and click the "More actions" button
-                more_actions = wait.until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='More actions']"))
-                )
-                more_actions.click()
-                
-                # Wait for and click "Show transcript"
-                transcript_button = wait.until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Show transcript']"))
-                )
-                
-                # Use JavaScript click as a fallback
-                driver.execute_script("arguments[0].click();", transcript_button)
-                
-                # Wait for transcript panel
-                time.sleep(2)  # Allow animation to complete
-                
-                # Try to click timestamp toggle if available
-                try:
-                    toggle_button = wait.until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Toggle timestamp']"))
-                    )
-                    toggle_button.click()
-                except:
-                    logger.info("Timestamp toggle not available")
-                
-                # Extract transcript
-                transcript_elements = wait.until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ytd-transcript-segment-renderer"))
-                )
-                
-                transcript = []
-                for element in transcript_elements:
-                    try:
-                        timestamp = element.find_element(By.CSS_SELECTOR, ".segment-timestamp").text
-                        text = element.find_element(By.CSS_SELECTOR, ".segment-text").text
-                        transcript.append(f"[{timestamp}] {text}")
-                    except:
-                        continue
-                
-                if transcript:
-                    return "\n".join(transcript)
-                raise Exception("No transcript segments found")
-                
-            except (TimeoutException, ElementClickInterceptedException) as e:
-                logger.info(f"UI method failed, falling back to API: {str(e)}")
-                raise  # Trigger API fallback
-                
-        except Exception as e:
-            logger.info(f"Attempt {retry_count + 1} failed, trying API method: {str(e)}")
-            try:
-                # Fall back to YouTube Transcript API
-                transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-                formatted_transcript = []
-                for t in transcript_list:
-                    minutes = int(t['start'] // 60)
-                    seconds = int(t['start'] % 60)
-                    timestamp = f"{minutes:02d}:{seconds:02d}"
-                    formatted_transcript.append(f"[{timestamp}] {t['text']}")
-                return "\n".join(formatted_transcript)
-                
-            except Exception as api_error:
-                logger.error(f"API method failed: {str(api_error)}")
-                retry_count += 1
-                if retry_count == max_retries:
-                    return "Transcript not available for this video"
-                continue
-                
-        finally:
-            if 'driver' in locals():
-                driver.quit()
+        caption_tracks = captions.get('playerCaptionsTracklistRenderer', {}).get('captionTracks', [])
+        if not caption_tracks:
+            return None
+            
+        # 日本語か英語の字幕を優先
+        selected_track = None
+        for lang in ['ja', 'en']:
+            selected_track = next((track for track in caption_tracks 
+                                 if track.get('languageCode') == lang), None)
+            if selected_track:
+                break
+        
+        if not selected_track:
+            selected_track = caption_tracks[0]
+            
+        captions_url = selected_track['baseUrl']
+        captions_response = requests.get(captions_url, timeout=5)
+        
+        soup = BeautifulSoup(captions_response.text, 'xml')
+        return ' '.join(text.text for text in soup.find_all('text'))
+        
+    except Exception as e:
+        logger.error(f"Error getting transcript: {str(e)}")
+        return None
+
+def get_trending_videos_with_transcripts(keyword, **kwargs):
+    """Get trending videos and their transcripts with optimized parallel processing"""
+    videos = get_trending_videos(keyword, **kwargs)
     
-    return "Transcript not available for this video"
+    if not videos:
+        return []
+    
+    # 並列処理数を増やし、タイムアウトを設定
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_video = {
+            executor.submit(get_video_transcript, video['video_id']): video 
+            for video in videos
+        }
+        
+        for future in future_to_video:
+            video = future_to_video[future]
+            try:
+                transcript = future.result(timeout=15)  # タイムアウトを15秒に設定
+                video['transcript'] = transcript if transcript else "文字起こしが利用できません"
+            except Exception as e:
+                logger.error(f"Error getting transcript for {video['video_id']}: {str(e)}")
+                video['transcript'] = "文字起こしの取得に失敗しました"
+    
+    # 文字起こしが成功した動画を優先
+    videos.sort(key=lambda x: x['transcript'] != "文字起こしが利用できません", reverse=True)
+    return videos

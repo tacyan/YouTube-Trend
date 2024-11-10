@@ -1,7 +1,7 @@
 import os
 import logging
 from flask import Flask, render_template, request, jsonify
-from scraper import get_trending_videos, get_video_transcript
+from scraper import get_trending_videos, get_video_transcript, get_trending_videos_with_transcripts
 from ai_generator import generate_script
 
 # Configure logging
@@ -28,7 +28,7 @@ def index():
 def analyze():
     try:
         if not os.environ.get('GEMINI_API_KEY'):
-            return render_template('index.html', error="Gemini APIキーが設定されていません。管理者に連絡してください。")
+            return render_template('index.html', error="Gemini APIキーが設定されていません。")
             
         keyword = request.form.get('keyword')
         if not keyword:
@@ -41,8 +41,8 @@ def analyze():
         
         logger.info(f"Analyzing trends for keyword: {keyword}")
         
-        # Get trending videos with filters
-        videos = get_trending_videos(
+        # 動画と文字起こしを取得
+        videos = get_trending_videos_with_transcripts(
             keyword,
             upload_date=upload_date,
             video_duration=video_duration,
@@ -52,14 +52,17 @@ def analyze():
         if not videos:
             return render_template('index.html', error="条件に一致する動画が見つかりませんでした")
         
-        # Get transcript for first video
-        transcript = get_video_transcript(videos[0]['video_id'])
+        # すべての文字起こしを結合
+        all_transcripts = "\n\n".join([
+            f"動画タイトル: {v['title']}\n{v['transcript']}" 
+            for v in videos if v.get('transcript')
+        ])
         
-        # Generate script using Gemini
-        new_script = generate_script(transcript, duration)
+        # Geminiで分析
+        new_script = generate_script(all_transcripts, duration)
         
         return render_template('results.html', 
-                             videos=videos[:10], 
+                             videos=videos, 
                              generated_script=new_script,
                              keyword=keyword)
     
