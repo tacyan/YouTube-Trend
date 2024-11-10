@@ -1,0 +1,60 @@
+/* Minimal custom styles to complement Bootstrap */
+.script-content {
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.card {
+    border-color: var(--bs-gray-700);
+}
+
+.card-header {
+    background-color: var(--bs-gray-800);
+    border-bottom-color: var(--bs-gray-700);
+}
+
+.transcript-text {
+    font-size: 0.9rem;
+    background-color: var(--bs-gray-900);
+    color: var(--bs-light);
+    border: 1px solid var(--bs-gray-700);
+}
+
+/* Thumbnail preview styles */
+.thumbnail-container {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.thumbnail-preview {
+    position: fixed;
+    z-index: 1000;
+    display: none;
+    max-width: 480px;
+    border: 2px solid var(--bs-primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.card-img-top {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card-img-top:hover {
+    transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .script-content {
+        max-height: 400px;
+    }
+    
+    .thumbnail-preview {
+        max-width: 320px;
+    }
+}

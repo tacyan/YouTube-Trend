@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">YouTube トレンド分析</h2>
+                
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                
+                <form action="/analyze" method="POST" id="searchForm">
+                    <div class="mb-3">
+                        <label for="keyword" class="form-label">検索キーワード</label>
+                        <input type="text" class="form-control" id="keyword" name="keyword" 
+                               required placeholder="トピックまたはキーワードを入力">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="upload_date" class="form-label">アップロード日時</label>
+                        <select class="form-control" id="upload_date" name="upload_date">
+                            <option value="any">すべての期間</option>
+                            <option value="hour">1時間以内</option>
+                            <option value="today">24時間以内</option>
+                            <option value="week">1週間以内</option>
+                            <option value="month">1ヶ月以内</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="video_duration" class="form-label">動画の長さ</label>
+                        <select class="form-control" id="video_duration" name="video_duration">
+                            <option value="any">すべての長さ</option>
+                            <option value="short">4分未満</option>
+                            <option value="medium">4-20分</option>
+                            <option value="long">20分以上</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sort_by" class="form-label">並び替え</label>
+                        <select class="form-control" id="sort_by" name="sort_by">
+                            <option value="relevance">関連度順</option>
+                            <option value="date">アップロード日時順</option>
+                            <option value="view_count">視聴回数順</option>
+                            <option value="rating">評価順</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">目標動画時間（分）</label>
+                        <input type="number" class="form-control" id="duration" name="duration" 
+                               min="1" max="30" value="5">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100" id="analyzeBtn">
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        トレンド分析
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

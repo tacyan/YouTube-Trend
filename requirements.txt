@@ -1,0 +1,13 @@
+email-validator==2.2.0
+flask==3.0.3
+flask-sqlalchemy==3.1.1
+psycopg2-binary==2.9.10
+trafilatura==1.12.2
+google-generativeai==0.8.3
+beautifulsoup4==4.12.3
+requests==2.32.3
+youtube-transcript-api==0.6.2
+webdriver-manager==4.0.2
+selenium==4.26.1
+urllib3==2.2.1
+werkzeug==3.0.1

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h2>"{{ keyword }}" の検索結果</h2>
+        <a href="/" class="btn btn-secondary">新規検索</a>
+    </div>
+    
+    <div class="col-md-7">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>トレンド動画</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for video in videos %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="thumbnail-container">
+                                <img src="{{ video.thumbnail }}" 
+                                     class="card-img-top" 
+                                     alt="{{ video.title }}"
+                                     data-high-res="{{ video.thumbnail }}"
+                                     data-video-title="{{ video.title }}">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ video.title }}</h5>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        {{ video.channel }} • {{ video.views }}
+                                    </small>
+                                </p>
+                                <a href="https://youtube.com/watch?v={{ video.video_id }}" 
+                                   class="btn btn-outline-primary btn-sm mb-2" target="_blank">
+                                    動画を見る
+                                </a>
+                                <div class="transcript-area mt-2">
+                                    <button class="btn btn-sm btn-secondary mb-2 toggle-transcript" 
+                                            data-video-id="{{ video.video_id }}">
+                                        文字起こしを表示
+                                    </button>
+                                    <textarea class="form-control transcript-text d-none" 
+                                              readonly rows="5">読み込み中...</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h3>生成されたスクリプト</h3>
+            </div>
+            <div class="card-body">
+                <pre class="script-content">{{ generated_script }}</pre>
+                <button class="btn btn-outline-secondary mt-3" id="copyScriptBtn">
+                    スクリプトをコピー
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thumbnail Preview Container -->
+<div id="thumbnailPreview" class="thumbnail-preview">
+    <img src="" alt="" class="img-fluid">
+</div>
+{% endblock %}
