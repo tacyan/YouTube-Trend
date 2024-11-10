@@ -32,7 +32,7 @@ def generate_script(transcripts, duration):
                 return "エラー: Gemini APIキーが見つかりません"
             
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel('gemini-1.5-pro-002')
             
             # トークン制限に引っかかった場合のフォールバック処理
             try:
