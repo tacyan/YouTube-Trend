@@ -142,61 +142,56 @@ def get_trending_videos(keyword, upload_date='any', video_duration='any', sort_b
                 thumbnail = get_video_thumbnail(video_id)
                 
                 # Get channel name
-                channel = video.find_element(By.CSS_SELECTOR, "#channel-name").text.strip()
+                try:
+                    channel = video.find_element(By.CSS_SELECTOR, "#channel-name").text.strip()
+                except NoSuchElementException:
+                    channel = "チャンネル名不明"
                 
                 # Get metadata (views, likes, publish date)
                 views = ""
                 publish_date = ""
                 try:
-                    metadata_line = video.find_element(By.CSS_SELECTOR, "#metadata-line").text
-                    # メタデータを改行で分割して処理
-                    metadata_parts = [part.strip() for part in metadata_line.replace("\n", " • ").split("•")]
-                    
-                    # 視聴回数と投稿日を抽出
-                    for part in metadata_parts:
-                        part = part.strip()
-                        if "回視聴" in part and not views:
-                            views = part
-                        elif any(time_unit in part for time_unit in ["前", "年", "ヶ月", "週間", "日", "時間"]) and not publish_date:
-                            publish_date = part
+                    metadata_elements = video.find_elements(By.CSS_SELECTOR, "#metadata-line span")
+                    for element in metadata_elements:
+                        text = element.text.strip()
+                        if "回視聴" in text and not views:
+                            views = text
+                        elif any(time_unit in text for time_unit in ["前", "年", "ヶ月", "週間", "日", "時間"]) and not publish_date:
+                            if "回視聴" not in text:
+                                publish_date = text
                 except NoSuchElementException:
                     pass
+                except Exception as e:
+                    logger.error(f"Error extracting metadata: {str(e)}")
                 
                 # いいね数を取得（空文字列をデフォルトに）
                 likes = ""
                 try:
-                    # 検索結果ページから直接いいね数を取得
-                    engagement_panel = video.find_element(By.CSS_SELECTOR, "#metadata-line")
-                    if engagement_panel:
-                        engagement_text = engagement_panel.text
-                        # 視聴回数から概算いいね数を計算（YouTubeの平均的な比率を使用）
-                        if views:
-                            try:
-                                view_count = views.replace("回視聴", "").replace(" ", "")
-                                multiplier = 0.045  # 平均的ないいね率（4.5%）
-                                
-                                # 数値を変換
-                                if "万" in view_count:
-                                    base_number = float(view_count.replace("万", "")) * 10000
-                                elif "億" in view_count:
-                                    base_number = float(view_count.replace("億", "")) * 100000000
-                                else:
-                                    base_number = float(view_count)
-                                
-                                # いいね数を計算
-                                estimated_likes = int(base_number * multiplier)
-                                
-                                # フォーマット
-                                if estimated_likes >= 10000000:
-                                    likes = f"{estimated_likes/10000000:.1f}億"
-                                elif estimated_likes >= 10000:
-                                    likes = f"{estimated_likes/10000:.1f}万"
-                                else:
-                                    likes = f"{estimated_likes}"
-                            except (ValueError, TypeError):
-                                pass
-                except NoSuchElementException:
-                    pass
+                    if views:  # 視聴回数がある場合のみいいね数を計算
+                        view_count = views.replace("回視聴", "").replace(" ", "")
+                        multiplier = 0.045  # 平均的ないいね率（4.5%）
+                        
+                        # 数値を変換
+                        try:
+                            if "万" in view_count:
+                                base_number = float(view_count.replace("万", "")) * 10000
+                            elif "億" in view_count:
+                                base_number = float(view_count.replace("億", "")) * 100000000
+                            else:
+                                base_number = float(view_count)
+                            
+                            # いいね数を計算
+                            estimated_likes = int(base_number * multiplier)
+                            
+                            # フォーマット
+                            if estimated_likes >= 10000000:
+                                likes = f"{estimated_likes/10000000:.1f}億"
+                            elif estimated_likes >= 10000:
+                                likes = f"{estimated_likes/10000:.1f}万"
+                            else:
+                                likes = f"{estimated_likes}"
+                        except (ValueError, TypeError):
+                            pass
                 except Exception as e:
                     logger.error(f"Error calculating likes: {str(e)}")
                 

@@ -28,7 +28,7 @@ def generate_script(transcripts, duration):
                 
                 # 重要な部分を抽出（冒頭部分のみ）
                 content_words = content.split()
-                intro = ' '.join(content_words[:200]) if content_words else ""
+                intro = ' '.join(content_words[:500]) if content_words else ""
                 
                 analysis_text += f"動画{i}: {title}\n導入部分: {intro}\n\n"
                 
