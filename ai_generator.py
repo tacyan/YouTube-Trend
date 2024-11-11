@@ -58,7 +58,7 @@ def generate_script(transcripts, duration):
                         'temperature': 0.7,
                         'top_p': 0.8,
                         'top_k': 40,
-                        'max_output_tokens': 1024,  # トークン数を削減
+                        'max_output_tokens': 8192,  # トークン数を削減
                     }
                 )
                 
@@ -75,7 +75,7 @@ def generate_script(transcripts, duration):
                             'temperature': 0.7,
                             'top_p': 0.8,
                             'top_k': 40,
-                            'max_output_tokens': 512,
+                            'max_output_tokens': 2000,
                         }
                     )
                 else:

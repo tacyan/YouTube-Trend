@@ -243,12 +243,26 @@ def get_trending_videos_with_transcripts(keyword, **kwargs):
         for future in future_to_video:
             video = future_to_video[future]
             try:
-                transcript = future.result(timeout=15)  # タイムアウトを15秒に設定
+                transcript = future.result(timeout=15)
                 video['transcript'] = transcript if transcript else "文字起こしが利用できません"
             except Exception as e:
                 logger.error(f"Error getting transcript for {video['video_id']}: {str(e)}")
                 video['transcript'] = "文字起こしの取得に失敗しました"
     
-    # 文字起こしが成功した動画を優先
-    videos.sort(key=lambda x: x['transcript'] != "文字起こしが利用できません", reverse=True)
+    # 視聴回数を数値に変換する関数
+    def convert_views_to_number(views_str):
+        if views_str == 'N/A':
+            return 0
+        # '回視聴'や'万回視聴'などの文字列を処理
+        views_str = views_str.replace('回視聴', '').replace(' ', '')
+        if '万' in views_str:
+            return float(views_str.replace('万', '')) * 10000
+        return float(views_str)
+    
+    # 視聴回数で降順ソート（文字起こしの有無も考慮）
+    videos.sort(key=lambda x: (
+        x['transcript'] != "文字起こしが利用できません",
+        convert_views_to_number(x['views'])
+    ), reverse=True)
+    
     return videos
