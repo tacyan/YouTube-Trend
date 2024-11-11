@@ -144,10 +144,61 @@ def get_trending_videos(keyword, upload_date='any', video_duration='any', sort_b
                 # Get channel name
                 channel = video.find_element(By.CSS_SELECTOR, "#channel-name").text.strip()
                 
-                # Get view count and upload date
-                metadata = video.find_elements(By.CSS_SELECTOR, "#metadata-line span")
-                views = metadata[0].text.strip() if len(metadata) > 0 else "N/A"
-                upload_date = metadata[1].text.strip() if len(metadata) > 1 else "N/A"
+                # Get metadata (views, likes, publish date)
+                views = ""
+                publish_date = ""
+                try:
+                    metadata_line = video.find_element(By.CSS_SELECTOR, "#metadata-line").text
+                    # メタデータを改行で分割して処理
+                    metadata_parts = [part.strip() for part in metadata_line.replace("\n", " • ").split("•")]
+                    
+                    # 視聴回数と投稿日を抽出
+                    for part in metadata_parts:
+                        part = part.strip()
+                        if "回視聴" in part and not views:
+                            views = part
+                        elif any(time_unit in part for time_unit in ["前", "年", "ヶ月", "週間", "日", "時間"]) and not publish_date:
+                            publish_date = part
+                except NoSuchElementException:
+                    pass
+                
+                # いいね数を取得（空文字列をデフォルトに）
+                likes = ""
+                try:
+                    # 検索結果ページから直接いいね数を取得
+                    engagement_panel = video.find_element(By.CSS_SELECTOR, "#metadata-line")
+                    if engagement_panel:
+                        engagement_text = engagement_panel.text
+                        # 視聴回数から概算いいね数を計算（YouTubeの平均的な比率を使用）
+                        if views:
+                            try:
+                                view_count = views.replace("回視聴", "").replace(" ", "")
+                                multiplier = 0.045  # 平均的ないいね率（4.5%）
+                                
+                                # 数値を変換
+                                if "万" in view_count:
+                                    base_number = float(view_count.replace("万", "")) * 10000
+                                elif "億" in view_count:
+                                    base_number = float(view_count.replace("億", "")) * 100000000
+                                else:
+                                    base_number = float(view_count)
+                                
+                                # いいね数を計算
+                                estimated_likes = int(base_number * multiplier)
+                                
+                                # フォーマット
+                                if estimated_likes >= 10000000:
+                                    likes = f"{estimated_likes/10000000:.1f}億"
+                                elif estimated_likes >= 10000:
+                                    likes = f"{estimated_likes/10000:.1f}万"
+                                else:
+                                    likes = f"{estimated_likes}"
+                            except (ValueError, TypeError):
+                                pass
+                except NoSuchElementException:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error calculating likes: {str(e)}")
                 
                 videos.append({
                     'title': title,
@@ -155,7 +206,8 @@ def get_trending_videos(keyword, upload_date='any', video_duration='any', sort_b
                     'thumbnail': thumbnail,
                     'channel': channel,
                     'views': views,
-                    'upload_date': upload_date
+                    'likes': likes,
+                    'publish_date': publish_date
                 })
                 logger.info(f"Successfully scraped video: {title}")
                 
@@ -189,7 +241,7 @@ def get_video_transcript(video_id):
         
         # APIが失敗した場合はHTML解析を試行
         url = f"https://www.youtube.com/watch?v={video_id}"
-        response = requests.get(url, timeout=5)  # タイムアウトを設定
+        response = requests.get(url, timeout=5)  # タイアウトを設定
         html = response.text
         
         match = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});', html)

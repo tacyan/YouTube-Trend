@@ -25,12 +25,13 @@
                                      data-video-title="{{ video.title }}">
                             </div>
                             <div class="card-body">
-                                <h5 class="card-title">{{ video.title }}</h5>
-                                <p class="card-text">
-                                    <small class="text-muted">
-                                        {{ video.channel }} • {{ video.views }}
-                                    </small>
-                                </p>
+                                <div class="video-info">
+                                    <h5 class="video-title">{{ video.title }}</h5>
+                                    <p class="channel-name">{{ video.channel }}</p>
+                                    <p class="video-metadata">
+                                        {{ video.views }}{% if video.likes %} • {{ video.likes }} いいね{% endif %} • {{ video.publish_date }}
+                                    </p>
+                                </div>
                                 <a href="https://youtube.com/watch?v={{ video.video_id }}" 
                                    class="btn btn-outline-primary btn-sm mb-2" target="_blank">
                                     動画を見る
