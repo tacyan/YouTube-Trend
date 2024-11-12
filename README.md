@@ -28,12 +28,62 @@ FlaskベースのWebアプリケーションで、Google Gemini AIを活用し�
 
 ## セットアップ
 
-1. Replitでプロジェクトをフォーク
+1. Gitコマンドの導入
+
+下記URLからインストール
+
+https://git-scm.com/downloads
+
+
 2. 環境変数の設定:
    ```
    GEMINI_API_KEY=your_gemini_api_key
    FLASK_SECRET_KEY=your_secret_key
    ```
+.env.templateをコピーして.envを作成し、上記のAPIキーを設定
+
+FLASK_SECRET_KEYは適当な文字列を設定でいいので、このままで良いです。
+GEMINI_API_KEYはGoogle ai Studioで取得したAPIキーを設定します。
+
+GEMINI_API_KEYは詳しくはこちら
+https://note.com/tacyan/n/n520495acc736
+
+Gitを導入出来たら、以下のコマンドでリポジトリをクローンします。
+
+入れたいディレクトリに移動してから以下のコマンドを実行して下さい。
+
+```
+git clone https://github.com/tacyan/YouTube-Trend.git
+```
+
+gitの導入が難しいのであれば、zipファイルでダウンロードして解凍して下さい。
+
+Pythonを導入しているなら、requirements.txtをインストールします。
+
+```
+pip install -r requirements.txt
+```
+
+Pythonが導入されていないなら、以下のページでインストールします。
+
+https://www.python.org/downloads/
+
+PATHを通しておくと便利です。
+PATHを通す所にチェックを入れてインストールして下さい。
+
+gitとpythonの導入が完了したら、以下のコマンドで実行します。
+
+## 実行方法
+```
+python app.py     
+```
+
+アクセス方法
+
+```
+http://localhost:5000/
+```
+
 3. 必要な依存関係は自動的にインストールされます
 
 ## 使用方法
@@ -106,13 +156,3 @@ FlaskベースのWebアプリケーションで、Google Gemini AIを活用し�
 ## ライセンス
 
 このプロジェクトはMITライセンスの下で提供されています。
-
-
-## 実行方法
-```
-pip install -r requirements.txt
-python app.py     
-
-アクセス方法
-http://localhost:5000/
-```
