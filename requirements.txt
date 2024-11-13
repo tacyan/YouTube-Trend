@@ -4,10 +4,10 @@ flask-sqlalchemy==3.1.1
 psycopg2-binary==2.9.10
 google-generativeai==0.8.3
 beautifulsoup4==4.12.3
-requests==2.31.0  # より安定したバージョン
+requests==2.31.0
 youtube-transcript-api==0.6.2
-selenium==4.16.0  # より安定したバージョン
-urllib3==2.0.7    # より安定したバージョン
+selenium==4.16.0
+urllib3==2.0.7
 werkzeug==3.0.1
-python-dotenv==1.0.0  # 環境変数用に追加
-gunicorn==21.2.0      # プロダクション用サーバー
+python-dotenv==1.0.0
+gunicorn==21.2.0
