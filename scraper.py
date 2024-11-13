@@ -171,27 +171,39 @@ def get_trending_videos(keyword, upload_date='any', video_duration='any', sort_b
                         view_count = views.replace("回視聴", "").replace(" ", "")
                         multiplier = 0.045  # 平均的ないいね率（4.5%）
                         
-                        # 数値を変換
-                        try:
-                            if "万" in view_count:
-                                base_number = float(view_count.replace("万", "")) * 10000
-                            elif "億" in view_count:
-                                base_number = float(view_count.replace("億", "")) * 100000000
-                            else:
-                                base_number = float(view_count)
-                            
+                        def convert_to_number(value_str):
+                            """視聴回数を数値に変換する補助関数"""
+                            try:
+                                # 数値とドットのみを抽出
+                                number_str = ''.join(c for c in value_str if c.isdigit() or c == '.')
+                                if not number_str:
+                                    return 0
+                                        
+                                number = float(number_str)
+                                        
+                                # 単位に応じて計算
+                                if "億" in value_str:
+                                    return number * 100000000
+                                elif "万" in value_str:
+                                    return number * 10000
+                                return number
+                            except:
+                                return 0
+                        
+                        # 視聴回数を数値に変換
+                        base_number = convert_to_number(view_count)
+                        
+                        if base_number > 0:
                             # いいね数を計算
                             estimated_likes = int(base_number * multiplier)
                             
                             # フォーマット
-                            if estimated_likes >= 10000000:
-                                likes = f"{estimated_likes/10000000:.1f}億"
+                            if estimated_likes >= 100000000:
+                                likes = f"{estimated_likes/100000000:.1f}億"
                             elif estimated_likes >= 10000:
                                 likes = f"{estimated_likes/10000:.1f}万"
                             else:
                                 likes = f"{estimated_likes}"
-                        except (ValueError, TypeError):
-                            pass
                 except Exception as e:
                     logger.error(f"Error calculating likes: {str(e)}")
                 
@@ -298,13 +310,20 @@ def get_trending_videos_with_transcripts(keyword, **kwargs):
     
     # 視聴回数を数値に変換する関数
     def convert_views_to_number(views_str):
+        """視聴回数を数値に変換する関数"""
         if views_str == 'N/A':
             return 0
-        # '回視聴'や'万回視聴'などの文字列を処理
+        # '回視聴'や'万回視聴'、'億回視聴'などの文字列を処理
         views_str = views_str.replace('回視聴', '').replace(' ', '')
-        if '万' in views_str:
-            return float(views_str.replace('万', '')) * 10000
-        return float(views_str)
+        try:
+            if '億' in views_str:
+                return float(views_str.replace('億', '')) * 100000000
+            elif '万' in views_str:
+                return float(views_str.replace('万', '')) * 10000
+            else:
+                return float(views_str)
+        except ValueError:
+            return 0
     
     # 視聴回数で降順ソート（文字起こしの有無も考慮）
     videos.sort(key=lambda x: (

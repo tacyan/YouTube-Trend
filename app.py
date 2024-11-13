@@ -14,6 +14,22 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "youtube_trends_secret")
 
+def convert_views_to_number(views_str):
+    """視聴回数を数値に変換する関数"""
+    if views_str == 'N/A':
+        return 0
+    # '回視聴'や'万回視聴'、'億回視聴'などの文字列を処理
+    views_str = views_str.replace('回視聴', '').replace(' ', '')
+    try:
+        if '億' in views_str:
+            return float(views_str.replace('億', '')) * 100000000
+        elif '万' in views_str:
+            return float(views_str.replace('万', '')) * 10000
+        else:
+            return float(views_str)
+    except ValueError:
+        return 0
+
 @app.route('/')
 def index():
     try:
@@ -82,7 +98,7 @@ def get_transcript_route(video_id):
 if __name__ == '__main__':
     try:
         logger.info("Starting Flask application...")
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run()
     except Exception as e:
         logger.error(f"Failed to start Flask application: {str(e)}")
         raise
