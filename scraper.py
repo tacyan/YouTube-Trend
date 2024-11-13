@@ -285,6 +285,26 @@ def get_video_transcript(video_id):
         logger.error(f"Error getting transcript: {str(e)}")
         return None
 
+def convert_views_to_number(views_str):
+    """視聴回数を数値に変換する関数"""
+    if not views_str or views_str == '':
+        return 0
+    # 正規表現で数値と単位を抽出
+    match = re.match(r'([\d\.]+)(億|万)?回視聴', views_str)
+    if not match:
+        return 0
+    number, unit = match.groups()
+    try:
+        number = float(number)
+        if unit == '億':
+            return number * 100000000
+        elif unit == '万':
+            return number * 10000
+        else:
+            return number
+    except ValueError:
+        return 0
+
 def get_trending_videos_with_transcripts(keyword, **kwargs):
     """Get trending videos and their transcripts with optimized parallel processing"""
     videos = get_trending_videos(keyword, **kwargs)
@@ -307,23 +327,6 @@ def get_trending_videos_with_transcripts(keyword, **kwargs):
             except Exception as e:
                 logger.error(f"Error getting transcript for {video['video_id']}: {str(e)}")
                 video['transcript'] = "文字起こしの取得に失敗しました"
-    
-    # 視聴回数を数値に変換する関数
-    def convert_views_to_number(views_str):
-        """視聴回数を数値に変換する関数"""
-        if views_str == 'N/A':
-            return 0
-        # '回視聴'や'万回視聴'、'億回視聴'などの文字列を処理
-        views_str = views_str.replace('回視聴', '').replace(' ', '')
-        try:
-            if '億' in views_str:
-                return float(views_str.replace('億', '')) * 100000000
-            elif '万' in views_str:
-                return float(views_str.replace('万', '')) * 10000
-            else:
-                return float(views_str)
-        except ValueError:
-            return 0
     
     # 視聴回数で降順ソート（文字起こしの有無も考慮）
     videos.sort(key=lambda x: (
