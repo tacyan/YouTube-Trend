@@ -130,7 +130,24 @@ def get_trending_videos(keyword, upload_date='any', video_duration='any', sort_b
                 if not video_url:
                     continue
                     
-                video_id = video_url.split("=")[1].split("&")[0]
+                parsed_url = urllib.parse.urlparse(video_url)
+                video_id_params = urllib.parse.parse_qs(parsed_url.query).get('v')
+                
+                if video_id_params:
+                    video_id = video_id_params[0]
+                else:
+                    # '/shorts/' パスからvideo_idを抽出
+                    path_segments = parsed_url.path.split('/')
+                    if 'shorts' in path_segments:
+                        shorts_index = path_segments.index('shorts')
+                        if len(path_segments) > shorts_index + 1:
+                            video_id = path_segments[shorts_index + 1]
+                        else:
+                            logger.error(f"無効なショート動画URL: {video_url}")
+                            continue
+                    else:
+                        logger.error(f"無効な動画URL: {video_url}")
+                        continue
                 
                 # Skip duplicates
                 if video_id in processed_ids:
